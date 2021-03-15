@@ -26,12 +26,11 @@ class getTickerData():
                                                 5)
         return self.data
 
-
-
 if __name__=="__main__":
     data = TickerTable().getTable()
     tickers = list(data['EPIC'])
     test_ts = getTickerData().getData('AAL')
     print(test_ts.keys())
+
     
     
