@@ -1,14 +1,9 @@
+import pandas as pd 
 import yahoo_finance_api2 as yf 
 from yahoo_finance_api2 import share
 import requests
-import pandas as pd 
-import datetime as dt 
-import dash
-import dash_core_components as dcc 
-import dash_html_components as html 
-import plotly.express as px 
-from dash.dependencies import Input, Output
 from yahoo_finance_api2 import exceptions
+import datetime as dt 
 import concurrent.futures
 
 def get_ticker_dict():
@@ -39,38 +34,52 @@ def get_ticker_data(ticker):
     except exceptions.YahooFinanceError:
         pass      
 
+# def get_good_tickers(tickerdict):
+#     good_tickers = []
+#     for x in get_ticker_dict():
+#         for k,v in x.items():
+#             if k=='label':
+#                 pass
+#             else:
+#                 try:
+#                     data = get_ticker_data(v)
+#                     if data is not None:
+#                         good_tickers.append(x)
+#                     else:
+#                         pass
+#                 except exceptions.YahooFinanceError:
+#                     pass    
+#     return good_tickers                           
+
+# def get_tick_data_dict(tickerdict):
+#     good_tickers = []
+#     data_dict = {}
+#     for x in get_ticker_dict():
+#         for k,v in x.items():
+#             if k=='label':
+#                 pass
+#             else:
+#                 try:
+#                     data = get_ticker_data(v)
+#                     if data is not None:
+#                         good_tickers.append(x)
+#                         data_dict[k]=data
+#                     else:
+#                         pass
+#                 except exceptions.YahooFinanceError:
+#                     pass    
+#     return data_dict
+
 if __name__=="__main__":
     tickerdict = get_ticker_dict()
     with concurrent.futures.ThreadPoolExecutor() as exec:
         results = {x['value']:exec.submit(get_ticker_data,x['value']) for x in tickerdict}
     results = {k:v.result() for k,v in results.items()}
+
     results = {k:v for k,v in results.items() if v is not None}
-    def make_good_ticker_dict(tickerdict,results):
-        res = [x for x in tickerdict if x['value'] in results.keys()]
 
-        return res
-    good_ticker_dict = make_good_ticker_dict(tickerdict,results)
-    external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-    app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-    app.layout = html.Div(children=[
-                html.H1(children='Test Yahoo Finance Fetcher',
-                style={'textAlign':'center'}),
-                    dcc.Dropdown(
-                    id='ticker_dropdown',
-                    options=good_ticker_dict,
-                    value='AZN'),
-                dcc.Graph(id='my_fig')]
-                )
+    print(results)
 
-    @app.callback(
-        Output(component_id='my_fig', component_property='figure'),
-        [Input(component_id='ticker_dropdown', component_property='value')]
-    )
-    def update_line_chart(ticker):
-        good_data = results[ticker]
-        try:
-            fig = px.line(good_data,x='time',y='value')
-        except exceptions.YahooFinanceError:
-            fig = 'No Ticker Available'
-        return fig
-    app.run_server(debug=True)
+
+    # good_tick_dict = get_good_tickers(get_ticker_dict())
+    # print(good_tick_dict)
