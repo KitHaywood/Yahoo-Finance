@@ -40,15 +40,18 @@ def get_ticker_data(ticker):
         pass      
 
 if __name__=="__main__":
+
     tickerdict = get_ticker_dict()
     with concurrent.futures.ThreadPoolExecutor() as exec:
         results = {x['value']:exec.submit(get_ticker_data,x['value']) for x in tickerdict}
+
     results = {k:v.result() for k,v in results.items()}
     results = {k:v for k,v in results.items() if v is not None}
+
     def make_good_ticker_dict(tickerdict,results):
         res = [x for x in tickerdict if x['value'] in results.keys()]
-
         return res
+
     good_ticker_dict = make_good_ticker_dict(tickerdict,results)
     external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
     app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
@@ -61,7 +64,6 @@ if __name__=="__main__":
                     value='AZN'),
                 dcc.Graph(id='my_fig')]
                 )
-
     @app.callback(
         Output(component_id='my_fig', component_property='figure'),
         [Input(component_id='ticker_dropdown', component_property='value')]
