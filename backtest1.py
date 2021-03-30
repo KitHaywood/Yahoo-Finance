@@ -19,6 +19,7 @@ from backtesting.lib import crossover
 
 
 def get_ticker_dict():
+    """returns dict of ticker prepared for dropdown"""
     url = 'https://en.wikipedia.org/wiki/FTSE_100_Index#cite_note-13'
     html = requests.get(url).content
     df_list = pd.read_html(html)[3]
@@ -26,6 +27,8 @@ def get_ticker_dict():
     return tickerdict
 
 def get_ticker_data(ticker):
+    """takes ticker code such as 'AZN' and returns a dataframe of
+    OCHLV"""
     my_share = share.Share(ticker)
     try:
         data = my_share.get_historical(share.PERIOD_TYPE_DAY,
@@ -47,6 +50,8 @@ def get_ticker_data(ticker):
         pass
 
 def get_ticker_data_1(ticker):
+    """takes ticker code such as 'AZN' and returns a dataframe of
+    OCHLV"""
     my_share = share.Share(ticker)
     try:
         data = my_share.get_historical(share.PERIOD_TYPE_DAY,
@@ -66,6 +71,8 @@ def get_ticker_data_1(ticker):
         pass
 
 def get_ticker_data_2(ticker):
+    """takes ticker code such as 'AZN' and returns a dataframe of
+    OCHLV"""
     my_share = share.Share(ticker)
     try:
         data = my_share.get_historical(share.PERIOD_TYPE_DAY,
@@ -92,32 +99,25 @@ def SMA(values, n):
     return pd.Series(values).rolling(n).mean()
 
 class SmaCross(Strategy):
-    # Define the two MA lags as *class variables*
-    # for later optimization
+    """Define the two MA lags as *class variables*
+    for later optimization"""
     n1 = 10
     n2 = 20
-    
     def init(self):
-        # Precompute the two moving averages
         self.sma1 = self.I(SMA, self.data.Close, self.n1)
         self.sma2 = self.I(SMA, self.data.Close, self.n2)
     
     def next(self):
-        # If sma1 crosses above sma2, close any existing
-        # short trades, and buy the asset
         if crossover(self.sma1, self.sma2):
             self.position.close()
             self.buy()
-
-        # Else, if sma1 crosses below sma2, close any existing
-        # long trades, and sell the asset
         elif crossover(self.sma2, self.sma1):
             self.position.close()
             self.sell()
 
 
 if __name__=="__main__":
-    mp.set_start_method('fork')
+    mp.set_start_method('fork') # My thing 
     tickerdict = get_ticker_dict()
     with concurrent.futures.ThreadPoolExecutor() as exec:
         results = {x['value']:exec.submit(get_ticker_data_2,x['value']) for x in tickerdict}
@@ -229,5 +229,5 @@ if __name__=="__main__":
         except exceptions.YahooFinanceError:
             fig1,fig2,fig3,fig4,fig5 = 'No Ticker Available'
         return fig1, fig2, fig3, fig4, fig5, coefs, smac
-
+        
     app.run_server(debug=True)
