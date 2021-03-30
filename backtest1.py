@@ -117,6 +117,8 @@ class SmaCross(Strategy):
 
 
 if __name__=="__main__":
+    # Next thing is to build an optimiser which makes the best decision of which polynomial form works best for
+    # this model i.e. Chebyshev, Laguerre, Legendre etc - need to get this working tomorrow. 
     mp.set_start_method('fork') # My thing 
     tickerdict = get_ticker_dict()
     with concurrent.futures.ThreadPoolExecutor() as exec:
