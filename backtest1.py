@@ -191,13 +191,26 @@ if __name__=="__main__":
         good_data = results[ticker]
         try:
             good_data['time'] = good_data.index  
-            fig1 = px.scatter(good_data,x='time',y='Open',template='simple_white',title='Time Series')
-            fig1.update_traces(marker={'size': 4})
-                      
             start = good_data['time'][0]
             time = np.array([pd.Timedelta(x-start).total_seconds() for x in good_data['time']])
-            coefs = np.polyfit(time,np.array(good_data['Open']),degree)
-            print('coefs: ',coefs)
+            fig1 = px.scatter(good_data,x='time',y='Open',template='simple_white',title='Time Series')
+            fig1.update_traces(marker={'size': 4})
+            bt = Backtest(results[ticker], SmaCross, cash=10_000, commission=.002)
+            stats = bt.optimize(n1=range(5, 50, 5),
+                    n2=range(10, 200, 5),
+                    maximize='Equity Final [$]',
+                    constraint=lambda param: param.n1 < param.n2)
+            eq_curve = stats._equity_curve
+            eq_curve['time'] = eq_curve.index
+            fig5 = px.line(eq_curve,x='time',y='Equity',template='simple_white')
+            smac = str(stats._strategy)
+            fig1.add_trace(Scatter(x=good_data['time'],y=SMA(good_data['Open'],stats._strategy.n1),name='Short MA'))
+            fig1.add_trace(Scatter(x=good_data['time'],y=SMA(good_data['Open'],stats._strategy.n2),name='Long MA'))
+
+            print(np.nan_to_num(np.array(SMA(good_data['Open'],stats._strategy.n1))))
+            coefs = np.polyfit(time,np.nan_to_num(np.array(SMA(good_data['Open'],stats._strategy.n1))),degree)
+            print(coefs)
+            print(np.polyval(time,coefs))
             coef_df = pd.DataFrame.from_dict({'time':time,
                                                 'coeffs':np.polyval(coefs,time),
                                                 'original_t':good_data['time']})
@@ -214,20 +227,15 @@ if __name__=="__main__":
                                                 'der2':np.polyval(der2,time),
                                                 'original_t':good_data['time']})
             fig4 = px.line(der2_df,x='original_t',y='der2',template='simple_white',title='Second Derivative')
-            bt = Backtest(results[ticker], SmaCross, cash=10_000, commission=.002)
-            stats = bt.optimize(n1=range(5, 50, 5),
-                    n2=range(10, 200, 5),
-                    maximize='Equity Final [$]',
-                    constraint=lambda param: param.n1 < param.n2)
-            eq_curve = stats._equity_curve
-            eq_curve['time'] = eq_curve.index
-            fig5 = px.line(eq_curve,x='time',y='Equity',template='simple_white')
-            coefs = str(coefs)
-            smac = str(stats._strategy)
-            fig1.add_trace(Scatter(x=good_data['time'],y=SMA(good_data['Open'],stats._strategy.n1),name='Short MA'))
-            fig1.add_trace(Scatter(x=good_data['time'],y=SMA(good_data['Open'],stats._strategy.n2),name='Long MA'))
+
+
+            coefs = np.polyfit(time,np.array(good_data['Open']),degree)
+            print('coefs: ',coefs)
+            coef_df = pd.DataFrame.from_dict({'time':time,
+                                                'coeffs':np.polyval(coefs,time),
+                                                'original_t':good_data['time']})
         except exceptions.YahooFinanceError:
             fig1,fig2,fig3,fig4,fig5 = 'No Ticker Available'
         return fig1, fig2, fig3, fig4, fig5, coefs, smac
-        
+
     app.run_server(debug=True)
